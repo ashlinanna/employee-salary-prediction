@@ -35,11 +35,11 @@ st.markdown('<div class="sub-title">Predict whether an employee earns more than 
 st.markdown("---")
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.image("https://cdn-icons-png.flaticon.com/512/1995/1995574.png", caption="HR Expert", use_column_width=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/1995/1995574.png", caption="HR Expert", use_container_width=True)
 with col2:
-    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", caption="Data Scientist", use_column_width=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", caption="Data Scientist", use_container_width=True)
 with col3:
-    st.image("https://cdn-icons-png.flaticon.com/512/1053/1053244.png", caption="Salary Analyst", use_column_width=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/1053/1053244.png", caption="Salary Analyst", use_container_width=True)
 st.markdown("---")
 
 # Button to reveal form
