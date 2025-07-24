@@ -3,77 +3,120 @@ import streamlit as st
 import numpy as np
 import joblib
 
-# Load model and scaler
-model = joblib.load("salary_model.pkl")
-scaler = joblib.load("scaler.pkl")
+# Page config
+st.set_page_config(page_title="Employee Salary Prediction", layout="centered")
 
-# Set page config
-st.set_page_config(page_title="Employee Salary Predictor", layout="centered")
-
-# Inject background CSS
-st.markdown("""
+# Blue background + styling
+st.markdown(
+    '''
     <style>
-    .stApp {
-        background-color: #e6f0ff;
-        background-size: cover;
-    }
-    .title-container {
-        text-align: center;
-        padding: 30px;
-    }
-    .predict-title {
-        font-size: 36px;
-        font-weight: bold;
-        color: #003366;
-    }
-    .result-slide {
-        text-align: center;
-        padding: 80px;
-        background-color: #cce0ff;
-        border-radius: 20px;
-        font-size: 32px;
-        font-weight: bold;
-        color: #003366;
-    }
+        body {
+            background-color: #e0f0ff;
+        }
+        .title-container {
+            text-align: center;
+        }
+        .predict-button button {
+            background-color: #0066cc;
+            color: white;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+        .result-container {
+            text-align: center;
+            font-size: 30px;
+            color: white;
+            background-color: #007bff;
+            padding: 40px;
+            border-radius: 15px;
+            margin-top: 50px;
+        }
     </style>
-""", unsafe_allow_html=True)
+    ''',
+    unsafe_allow_html=True
+)
 
-# Initialize session state
-if 'app_stage' not in st.session_state:
-    st.session_state.app_stage = 'welcome'
-if 'prediction' not in st.session_state:
-    st.session_state.prediction = None
+# Session state to control flow
+if "show_form" not in st.session_state:
+    st.session_state.show_form = False
 
-# Welcome page
-if st.session_state.app_stage == 'welcome':
-    st.markdown('<div class="title-container">', unsafe_allow_html=True)
-    st.markdown('<p class="predict-title">Employee Salary Category Prediction</p>', unsafe_allow_html=True)
-    st.image("https://cdn.pixabay.com/photo/2016/11/29/04/17/meeting-1869514_1280.jpg", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+# Initial title page
+if not st.session_state.show_form:
+    st.markdown('<div class="title-container"><h1>Employee Salary Category Prediction</h1></div>', unsafe_allow_html=True)
+    st.image("https://images.unsplash.com/photo-1629904853893-c2c8981a1dc5", use_container_width=True)
+    if st.button("Predict"):
+        st.session_state.show_form = True
+        st.rerun()
 
-    if st.button("Predict Salary"):
-        st.session_state.app_stage = 'form'
+# Show input form
+else:
+    model = joblib.load("salary_model.pkl")
+    scaler = joblib.load("scaler.pkl")
 
-# Input form
-elif st.session_state.app_stage == 'form':
     st.header("Enter Employee Details")
 
     age = st.number_input("Age", min_value=18, max_value=100, value=30)
-    education_num = st.slider("Education Level (1-16)", 1, 16, 10)
+    education_num = st.slider("Education Level (1 = Low, 16 = High)", 1, 16, 10)
     hours_per_week = st.slider("Hours per week", 1, 100, 40)
     capital_gain = st.number_input("Capital Gain", value=0)
     capital_loss = st.number_input("Capital Loss", value=0)
 
-    # Dropdowns with readable labels
-    workclass_map = {
-        "Private": 0, "Self-emp-not-inc": 1, "Self-emp-inc": 2, "Federal-gov": 3,
-        "Local-gov": 4, "State-gov": 5, "Without-pay": 6
+    # Dropdowns with labels
+    workclass_options = {
+        'Private': 0, 'Self-emp-not-inc': 1, 'Self-emp-inc': 2,
+        'Federal-gov': 3, 'Local-gov': 4, 'State-gov': 5, 'Without-pay': 6
     }
-    marital_status_map = {
-        "Married-civ-spouse": 0, "Divorced": 1, "Never-married": 2,
-        "Separated": 3, "Widowed": 4, "Married-spouse-absent": 5
+    marital_status_options = {
+        'Married-civ-spouse': 0, 'Divorced': 1, 'Never-married': 2,
+        'Separated': 3, 'Widowed': 4, 'Married-spouse-absent': 5
     }
-    occupation_map = {
-        "Tech-support": 0, "Craft-repair": 1, "Other-service": 2, "Sales": 3,
-        "Exec-managerial": 4, "Prof-specialty": 5, "Handlers-cleaners": 6,
-        "Machine-op-inspct": 7, "Adm-clerical": 8
+    occupation_options = {
+        'Tech-support': 0, 'Craft-repair': 1, 'Other-service': 2,
+        'Sales': 3, 'Exec-managerial': 4, 'Prof-specialty': 5, 'Handlers-cleaners': 6,
+        'Machine-op-inspct': 7, 'Adm-clerical': 8, 'Farming-fishing': 9,
+        'Transport-moving': 10, 'Priv-house-serv': 11, 'Protective-serv': 12
+    }
+    relationship_options = {
+        'Wife': 0, 'Own-child': 1, 'Husband': 2,
+        'Not-in-family': 3, 'Other-relative': 4, 'Unmarried': 5
+    }
+    race_options = {
+        'White': 0, 'Black': 1, 'Asian-Pac-Islander': 2, 'Amer-Indian-Eskimo': 3, 'Other': 4
+    }
+    sex_options = {'Male': 0, 'Female': 1}
+    country_options = {
+        'United-States': 0, 'Mexico': 1, 'Philippines': 2,
+        'Germany': 3, 'Canada': 4, 'India': 5, 'England': 6,
+        'Cuba': 7, 'Jamaica': 8, 'South': 9, 'China': 10
+    }
+
+    # Selectboxes with keys
+    workclass = st.selectbox("Workclass", list(workclass_options.keys()))
+    marital_status = st.selectbox("Marital Status", list(marital_status_options.keys()))
+    occupation = st.selectbox("Occupation", list(occupation_options.keys()))
+    relationship = st.selectbox("Relationship", list(relationship_options.keys()))
+    race = st.selectbox("Race", list(race_options.keys()))
+    sex = st.selectbox("Sex", list(sex_options.keys()))
+    native_country = st.selectbox("Native Country", list(country_options.keys()))
+
+    if st.button("Submit & Predict"):
+        input_data = np.array([[
+            age,
+            workclass_options[workclass],
+            education_num,
+            marital_status_options[marital_status],
+            occupation_options[occupation],
+            relationship_options[relationship],
+            race_options[race],
+            sex_options[sex],
+            capital_gain,
+            capital_loss,
+            hours_per_week,
+            country_options[native_country]
+        ]])
+
+        input_scaled = scaler.transform(input_data)
+        prediction = model.predict(input_scaled)[0]
+        result = ">50K" if prediction == 1 else "<=50K"
+
+        st.markdown(f'<div class="result-container">Predicted Income: {result}</div>', unsafe_allow_html=True)
