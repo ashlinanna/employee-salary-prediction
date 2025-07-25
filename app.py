@@ -2,11 +2,12 @@
 import streamlit as st
 import numpy as np
 import joblib
+import matplotlib.pyplot as plt
 
-# Page config
-st.set_page_config(page_title="Employee Salary Prediction", layout="centered")
+# Set Streamlit page settings
+st.set_page_config(page_title="Employee Salary Predictor", layout="centered")
 
-# Blue background + styling
+# CSS for background and styling
 st.markdown(
     '''
     <style>
@@ -16,12 +17,6 @@ st.markdown(
         .title-container {
             text-align: center;
         }
-        .predict-button button {
-            background-color: #0066cc;
-            color: white;
-            font-size: 16px;
-            border-radius: 8px;
-        }
         .result-container {
             text-align: center;
             font-size: 30px;
@@ -29,18 +24,20 @@ st.markdown(
             background-color: #007bff;
             padding: 40px;
             border-radius: 15px;
-            margin-top: 50px;
+            margin-top: 30px;
         }
     </style>
     ''',
     unsafe_allow_html=True
 )
 
-# Session state to control flow
+# Control flow with session state
 if "show_form" not in st.session_state:
     st.session_state.show_form = False
+if "prediction_counts" not in st.session_state:
+    st.session_state.prediction_counts = {">50K": 0, "<=50K": 0}
 
-# Initial title page
+# Title page with image
 if not st.session_state.show_form:
     st.markdown('<div class="title-container"><h1>Employee Salary Category Prediction</h1></div>', unsafe_allow_html=True)
     st.image("https://images.unsplash.com/photo-1629904853893-c2c8981a1dc5", use_container_width=True)
@@ -48,20 +45,19 @@ if not st.session_state.show_form:
         st.session_state.show_form = True
         st.rerun()
 
-# Show input form
+# Input form and prediction
 else:
     model = joblib.load("salary_model.pkl")
     scaler = joblib.load("scaler.pkl")
 
     st.header("Enter Employee Details")
 
-    age = st.number_input("Age", min_value=18, max_value=100, value=30)
+    age = st.number_input("Age", 18, 100, value=30)
     education_num = st.slider("Education Level (1 = Low, 16 = High)", 1, 16, 10)
     hours_per_week = st.slider("Hours per week", 1, 100, 40)
     capital_gain = st.number_input("Capital Gain", value=0)
     capital_loss = st.number_input("Capital Loss", value=0)
 
-    # Dropdowns with labels
     workclass_options = {
         'Private': 0, 'Self-emp-not-inc': 1, 'Self-emp-inc': 2,
         'Federal-gov': 3, 'Local-gov': 4, 'State-gov': 5, 'Without-pay': 6
@@ -90,7 +86,6 @@ else:
         'Cuba': 7, 'Jamaica': 8, 'South': 9, 'China': 10
     }
 
-    # Selectboxes with keys
     workclass = st.selectbox("Workclass", list(workclass_options.keys()))
     marital_status = st.selectbox("Marital Status", list(marital_status_options.keys()))
     occupation = st.selectbox("Occupation", list(occupation_options.keys()))
@@ -119,4 +114,18 @@ else:
         prediction = model.predict(input_scaled)[0]
         result = ">50K" if prediction == 1 else "<=50K"
 
+        # Show result
         st.markdown(f'<div class="result-container">Predicted Income: {result}</div>', unsafe_allow_html=True)
+
+        # Update pie chart state
+        st.session_state.prediction_counts[result] += 1
+
+        # Pie Chart
+        st.subheader("📊 Prediction Distribution (This Session)")
+        labels = list(st.session_state.prediction_counts.keys())
+        sizes = list(st.session_state.prediction_counts.values())
+
+        fig, ax = plt.subplots()
+        ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
